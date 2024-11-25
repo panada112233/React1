@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import jsPDF from "jspdf";
 
 function MyEducation() {
@@ -23,7 +24,20 @@ function MyEducation() {
     Doctorate: "ปริญญาเอก",
   };
 
-  const handleAddOrEditEducation = (e) => {
+  // Fetch educations from the API on component mount
+  useEffect(() => {
+    const fetchEducations = async () => {
+      try {
+        const response = await axios.get("https://localhost:7039/api/Educations");
+        setEducations(response.data);
+      } catch (error) {
+        console.error("Error fetching educations:", error);
+      }
+    };
+    fetchEducations();
+  }, []);
+
+  const handleAddOrEditEducation = async (e) => {
     e.preventDefault();
 
     if (isEditing) {
@@ -34,7 +48,12 @@ function MyEducation() {
       setIsEditing(false);
       setEditIndex(null);
     } else {
-      setEducations([...educations, newEducation]);
+      try {
+        await axios.post("https://localhost:7039/api/Educations", newEducation);
+        setEducations([...educations, newEducation]);
+      } catch (error) {
+        console.error("Error adding education:", error);
+      }
     }
 
     setNewEducation({
@@ -57,9 +76,18 @@ function MyEducation() {
     setEditIndex(index);
   };
 
-  const handleDeleteEducation = (index) => {
-    const updatedEducations = educations.filter((_, i) => i !== index);
-    setEducations(updatedEducations);
+  const handleDeleteEducation = async (index) => {
+    try {
+      // Assuming there's a delete endpoint
+      await axios.delete(
+        `https://localhost:7039/api/Educations/${educations[index].educationID}`
+      );
+
+      const updatedEducations = educations.filter((_, i) => i !== index);
+      setEducations(updatedEducations);
+    } catch (error) {
+      console.error("Error deleting education:", error);
+    }
   };
 
   const handleExportPDF = () => {

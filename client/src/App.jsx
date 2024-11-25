@@ -45,6 +45,7 @@ function App() {
               <Route path="Document" element={<Document />} />
               <Route path="My_education" element={<MyEducation />} />
               <Route path="My_experience" element={<MyExperience />} />
+              <Route path="Change_profile" element={<ChangeProfile />} />
             </Route>
 
             {/* Route Logout */}

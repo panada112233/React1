@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function Document() {
   const [documents, setDocuments] = useState([]);
@@ -19,17 +20,50 @@ function Document() {
     Others: 'อื่นๆ',
   };
 
-  const handleAddDocument = (e) => {
+  // Fetch documents from API on initial load
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await axios.get('https://localhost:7039/api/Files');
+        setDocuments(response.data);
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+      }
+    };
+    fetchDocuments();
+  }, []);
+
+  const handleAddDocument = async (e) => {
     e.preventDefault();
+
     if (newDocument.file) {
-      const newDoc = { ...newDocument, id: Date.now() };
-      setDocuments([...documents, newDoc]);
-      setNewDocument({
-        category: '',
-        file: null,
-        description: '',
-        uploadDate: new Date().toLocaleDateString(),
-      });
+      const formData = new FormData();
+      formData.append('file', newDocument.file);
+      formData.append('category', newDocument.category);
+      formData.append('description', newDocument.description);
+      formData.append('uploadDate', newDocument.uploadDate);
+
+      try {
+        await axios.post('https://localhost:7039/api/Files', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        // Fetch the updated list after adding a new document
+        const response = await axios.get('https://localhost:7039/api/Files');
+        setDocuments(response.data);
+
+        // Reset the form
+        setNewDocument({
+          category: '',
+          file: null,
+          description: '',
+          uploadDate: new Date().toLocaleDateString(),
+        });
+      } catch (error) {
+        console.error('Error uploading document:', error);
+      }
     } else {
       alert('กรุณาเลือกไฟล์เอกสารก่อน');
     }
@@ -44,16 +78,16 @@ function Document() {
     setFilteredDocuments(results);
   };
 
-  const handleDeleteDocument = (id) => {
-    const updatedDocuments = documents.filter((doc) => doc.id !== id);
-    setDocuments(updatedDocuments);
-    setFilteredDocuments(updatedDocuments);
-  };
-
-  const handleEditDocument = (id) => {
-    const doc = documents.find((d) => d.id === id);
-    setNewDocument(doc);
-    handleDeleteDocument(id);
+  const handleDeleteDocument = async (id) => {
+    try {
+      await axios.delete(`https://localhost:7039/api/Files/${id}`);
+      // Fetch the updated list after deleting a document
+      const response = await axios.get('https://localhost:7039/api/Files');
+      setDocuments(response.data);
+      setFilteredDocuments(response.data);
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -174,7 +208,7 @@ function Document() {
                     </button>
                     <button
                       className="btn btn-warning"
-                      onClick={() => handleEditDocument(doc.id)}
+                      onClick={() => alert('แก้ไขไฟล์: ' + doc.file.name)}
                     >
                       แก้ไข
                     </button>

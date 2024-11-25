@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import jsPDF from "jspdf";
 
 function MyExperience() {
@@ -9,23 +10,57 @@ function MyExperience() {
     salary: "",
     year: "",
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
 
+  // ดึงข้อมูลจาก API เมื่อโหลดหน้า
+  useEffect(() => {
+    const fetchExperiences = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/WorkExperiences");
+        setExperiences(response.data);
+      } catch (error) {
+        console.error("Error fetching experiences:", error);
+      }
+    };
+
+    fetchExperiences();
+  }, []);
+
   // ฟังก์ชันเพิ่ม/แก้ไขประสบการณ์ทำงาน
-  const handleAddOrEditExperience = (e) => {
+  const handleAddOrEditExperience = async (e) => {
     e.preventDefault();
 
     if (isEditing) {
-      const updatedExperiences = experiences.map((exp, index) =>
-        index === editIndex ? newExperience : exp
-      );
-      setExperiences(updatedExperiences);
-      setIsEditing(false);
-      setEditIndex(null);
+      // อัปเดตข้อมูลใน backend
+      try {
+        const updatedExperience = { ...experiences[editIndex], ...newExperience };
+        const response = await axios.put(
+          `http://localhost:5000/api/WorkExperiences/${updatedExperience.experienceID}`,
+          updatedExperience
+        );
+
+        const updatedExperiences = experiences.map((exp, index) =>
+          index === editIndex ? response.data : exp
+        );
+        setExperiences(updatedExperiences);
+        setIsEditing(false);
+        setEditIndex(null);
+      } catch (error) {
+        console.error("Error updating experience:", error);
+      }
     } else {
-      setExperiences([...experiences, newExperience]);
+      // เพิ่มข้อมูลใหม่ใน backend
+      try {
+        const response = await axios.post(
+          "http://localhost:5000/api/WorkExperiences",
+          newExperience
+        );
+
+        setExperiences([...experiences, response.data]);
+      } catch (error) {
+        console.error("Error adding experience:", error);
+      }
     }
 
     setNewExperience({ company: "", jobTitle: "", salary: "", year: "" });
@@ -45,9 +80,22 @@ function MyExperience() {
   };
 
   // ฟังก์ชันลบประสบการณ์
-  const handleDeleteExperience = (index) => {
-    const updatedExperiences = experiences.filter((_, i) => i !== index);
-    setExperiences(updatedExperiences);
+  const handleDeleteExperience = async (index) => {
+    const experienceToDelete = experiences[index];
+
+    try {
+      // ใช้ URL ที่ถูกต้องตาม API ของคุณ
+      await axios.delete(
+        `https://localhost:7039/api/WorkExperiences/${experienceToDelete.experienceID}`
+      );
+
+      // อัพเดต state หลังจากการลบ
+      const updatedExperiences = experiences.filter((_, i) => i !== index);
+      setExperiences(updatedExperiences);
+    } catch (error) {
+      console.error("Error deleting experience:", error);
+    }
+
   };
 
   // ฟังก์ชัน Export PDF
@@ -72,7 +120,6 @@ function MyExperience() {
   return (
     <div className="p-6 bg-base-200">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6 relative">
-        {/* ปุ่ม Export PDF ขวาบน */}
         <button
           className="btn btn-accent absolute top-4 right-4"
           onClick={handleExportPDF}

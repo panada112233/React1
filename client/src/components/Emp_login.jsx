@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../Emp_login.css'; // Import CSS สำหรับการปรับแต่ง
+import axios from 'axios';
+import '../Emp_login.css';
 import imgPath from '../assets/2.png';
 
 const Emp_login = ({ setIsLoggedIn }) => {
@@ -10,29 +11,65 @@ const Emp_login = ({ setIsLoggedIn }) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock ตรวจสอบข้อมูล
-    setTimeout(() => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setError('รูปแบบอีเมลไม่ถูกต้อง');
-        setIsLoading(false);
-        return;
-      }
-
-      if (email === 'test@example.com' && password === 'password') {
-        setError('');
-        alert('เข้าสู่ระบบสำเร็จ');
-        setIsLoggedIn(true); // ตั้งค่าให้ isLoggedIn เป็น true
-        navigate('/EmpHome');
-      } else {
-        setError('กรุณาตรวจสอบอีเมลและรหัสผ่าน');
-      }
+    // ตรวจสอบรูปแบบอีเมลเบื้องต้น
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('รูปแบบอีเมลไม่ถูกต้อง');
       setIsLoading(false);
-    }, 2000); // Mock delay
+      return;
+    }
+
+    // กำหนดข้อมูลและ config สำหรับการร้องขอ API
+    const data = JSON.stringify({
+      email: email,
+      passwordHash: password,
+    });
+
+    const config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: 'https://localhost:7039/api/Users/Login',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: data,
+    };
+
+    try {
+      const response = await axios.request(config);
+
+      // หากเข้าสู่ระบบสำเร็จ
+      if (response.status === 200) {
+        setError(''); // เคลียร์ข้อความผิดพลาด
+        alert('เข้าสู่ระบบสำเร็จ');
+        setIsLoggedIn(true); // ตั้งค่าการเข้าสู่ระบบเป็น true
+
+        const userId = response.data.userid; // รับ User ID
+        const token = response.data.token; // รับ Token จาก API
+
+        // เก็บข้อมูลใน SessionStorage
+        sessionStorage.setItem('userId', userId);
+        sessionStorage.setItem('token', token); // บันทึก Token
+
+        navigate('/EmpHome'); // ไปที่หน้าหลักของพนักงาน
+      }
+    } catch (err) {
+      // จัดการข้อผิดพลาดจาก API
+      if (err.response && err.response.status === 401) {
+        setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      } else if (err.response && err.response.status === 500) {
+        setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      } else {
+        setError('กรุณาลองใหม่อีกครั้ง');
+      }
+      console.error('Login failed:', err.response || err.message);
+    } finally {
+      setIsLoading(false); // สิ้นสุดการโหลด
+    }
   };
 
   return (
@@ -91,7 +128,9 @@ const Emp_login = ({ setIsLoggedIn }) => {
               </a>
             </div>
           </form>
-          <a href="/ForgotPassword" className="text-sm text-blue-500 mt-2">ลืมรหัสผ่าน?</a>
+          <a href="/ForgotPassword" className="text-sm text-blue-500 mt-2">
+            ลืมรหัสผ่าน?
+          </a>
 
           {error && (
             <div className="text-red-500 mt-2 text-center">{error}</div>

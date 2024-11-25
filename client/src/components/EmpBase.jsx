@@ -16,7 +16,7 @@ const EmpBase = () => {
         </div>
         {/* ปุ่มเปลี่ยนรูปภาพ */}
         <Link
-          to="/Change_profile"
+          to="/EmpHome/Change_profile"
           className="btn btn-outline btn-accent btn-sm mb-8"
         >
           เปลี่ยนรูปภาพ

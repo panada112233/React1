@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 function ChangePassword() {
   const [oldPassword, setOldPassword] = useState('');
@@ -6,23 +7,35 @@ function ChangePassword() {
   const [newPassword2, setNewPassword2] = useState('');
   const [messages, setMessages] = useState([]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate passwords
     if (newPassword1 !== newPassword2) {
       setMessages([{ tags: 'error', text: 'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน!' }]);
       return;
     }
 
-    // ส่งข้อมูลไป backend (ตัวอย่าง)
-    console.log('Old Password:', oldPassword);
-    console.log('New Password:', newPassword1);
+    // Prepare the data to send to the backend
+    const resetData = {
+      oldPassword: oldPassword,
+      newPassword: newPassword1,
+    };
 
-    // แสดงข้อความสำเร็จ
-    setMessages([{ tags: 'success', text: 'เปลี่ยนรหัสผ่านสำเร็จ!' }]);
-    setOldPassword('');
-    setNewPassword1('');
-    setNewPassword2('');
+    try {
+      // Send POST request to the backend
+      const response = await axios.post('https://localhost:7039/api/PasswordResets', resetData);
+
+      if (response.status === 201) {
+        setMessages([{ tags: 'success', text: 'เปลี่ยนรหัสผ่านสำเร็จ!' }]);
+        setOldPassword('');
+        setNewPassword1('');
+        setNewPassword2('');
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      setMessages([{ tags: 'error', text: 'ไม่สามารถเปลี่ยนรหัสผ่านได้. กรุณาลองใหม่!' }]);
+    }
   };
 
   return (

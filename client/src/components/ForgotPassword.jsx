@@ -19,41 +19,41 @@ const ForgotPassword = () => {
       return;
     }
 
-    // ในที่นี้เป็นการจำลองการส่งอีเมล
+    // จำลองการส่งอีเมล
     setTimeout(() => {
-      // จำลองการส่งอีเมล
       setMessage('ลิงก์สำหรับรีเซ็ตรหัสผ่านถูกส่งไปที่อีเมลของคุณแล้ว');
       setIsLoading(false);
-      // นำทางกลับไปที่หน้าเข้าสู่ระบบ
       setTimeout(() => navigate('/Emp_login'), 3000);
     }, 2000);
   };
 
   return (
-    <div className="forgot-password-container">
-      <div className="card w-96 bg-base-100 shadow-xl rounded-3xl">
-        <div className="card-body">
-          <h5 className="text-center text-xl font-bold text-black mb-4">
+    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-indigo-500 to-purple-500">
+      <div className="card w-96 bg-white shadow-2xl rounded-lg">
+        <div className="card-body p-6">
+          <h5 className="text-center text-2xl font-bold text-primary mb-6">
+            <i className="fas fa-lock text-3xl mb-2"></i>
+            <br />
             ลืมรหัสผ่าน
           </h5>
           <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
                 อีเมลที่ใช้สมัคร
               </label>
               <input
                 type="email"
-                className="input input-bordered w-full py-4"
+                className="input input-bordered w-full bg-gray-50 focus:outline-none focus:ring focus:ring-indigo-300"
                 placeholder="กรอกอีเมล"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            <div className="flex justify-between mt-4">
+            <div className="flex justify-center mt-6">
               <button
                 type="submit"
-                className="btn btn-success px-5"
+                className={`btn btn-primary w-full ${isLoading ? 'loading' : ''}`}
                 disabled={isLoading}
               >
                 {isLoading ? 'กำลังส่งลิงก์...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน'}
@@ -61,10 +61,14 @@ const ForgotPassword = () => {
             </div>
           </form>
           {message && (
-            <div className="text-center mt-2">
-              <div className={message.includes('สำเร็จ') ? 'text-green-500' : 'text-red-500'}>
+            <div className="mt-4 text-center">
+              <span
+                className={`text-sm ${
+                  message.includes('สำเร็จ') ? 'text-green-500' : 'text-red-500'
+                }`}
+              >
                 {message}
-              </div>
+              </span>
             </div>
           )}
         </div>

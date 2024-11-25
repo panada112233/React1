@@ -1,52 +1,82 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';  // เพิ่มการใช้งาน useNavigate
 import '../Register.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     firstname: '',
     lastname: '',
-    empcode: '',
     email: '',
     pwd: '',
     cpwd: '',
   });
 
   const [error, setError] = useState('');
+  const navigate = useNavigate();  // สร้าง useNavigate เพื่อใช้ในการเปลี่ยนหน้า
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ตรวจสอบรหัสผ่านว่าเหมือนกันไหม
     if (formData.pwd !== formData.cpwd) {
       setError('รหัสผ่านไม่ตรงกัน');
       return;
     }
 
-    // Mock backend validation
-    if (formData.email === 'existing@example.com') {
-      setError('อีเมลนี้มีผู้ใช้งานแล้ว');
-      return;
-    }
+    let data = JSON.stringify({
+      "firstName": formData.firstname,
+      "lastName": formData.lastname,
+      "email": formData.email,
+      "passwordHash": formData.pwd
+    });
 
-    if (formData.empcode === '12345') {
-      setError('รหัสพนักงานนี้มีผู้ใช้งานแล้ว');
-      return;
-    }
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: 'https://localhost:7039/api/Users/Insert',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: data
+    };
 
-    alert('ลงทะเบียนสำเร็จ');
-    setError('');
-    // Redirect or reset form as needed
+    axios.request(config)
+      .then((response) => {
+        console.log(JSON.stringify(response.data));
+        if (response.status === 201) {
+          alert('ลงทะเบียนสำเร็จ');
+          setError('');
+          // รีไดเร็กต์ไปหน้าล็อกอิน
+          navigate('/Emp_login');
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        if (error.response && error.response.data) {
+          if (error.response.data.includes("duplicate")) {  // ตรวจสอบข้อความ error จาก API ที่บอกว่าอีเมลซ้ำ
+            setError('อีเมลนี้มีผู้ใช้งานแล้ว');
+          } else {
+            setError(`เกิดข้อผิดพลาด: ${error.response.data}`);
+          }
+        } else {
+          setError('เกิดข้อผิดพลาดในการลงทะเบียน');
+        }
+      });
   };
 
   return (
     <div className="register-container">
-      <div className="card bg-base-100 shadow-xl w-96 ">
+      <div className="card bg-base-100 shadow-xl w-96">
         <div className="card-body">
-          <h5 className="p-2 text-danger" style={{ borderBottom: '2px solid orange' }}>สร้างบัญชี</h5>
+          <h5 className="p-2 text-danger" style={{ borderBottom: '2px solid orange' }}>
+            สร้างบัญชี
+          </h5>
           <div className="container-fluid">
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -80,19 +110,7 @@ const Register = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="form-group">
-                  <label>รหัสพนักงาน</label>
-                  <input
-                    type="text"
-                    name="empcode"
-                    className="input input-bordered w-full"
-                    placeholder="รหัสพนักงาน"
-                    required
-                    value={formData.empcode}
-                    onChange={handleChange}
-                  />
-                </div>
+              <div className="grid grid-cols gap-4 mb-4">
                 <div className="form-group">
                   <label>อีเมล</label>
                   <input
@@ -133,7 +151,7 @@ const Register = () => {
                   />
                 </div>
               </div>
-              <button className="btn btn-primary ">ยืนยัน</button>
+              <button className="btn btn-primary">ยืนยันการลงทะเบียน</button>
             </form>
             {error && <p className="text-danger mt-2">{error}</p>}
           </div>
